@@ -1,0 +1,13 @@
+library(myRFMpackage)
+library(data.table)
+library(lubridate)
+library(Hmisc)
+
+
+da <- fread("transactions.csv")
+da[,TransDate:=dmy(TransDate,tz="UTC")]
+
+
+print(max(d$TransDate))
+
+RFMfunction(d=da,20,20,60)

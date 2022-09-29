@@ -1,0 +1,59 @@
+#
+# This is a Shiny web application. You can run the application by clicking
+# the 'Run App' button above.
+#
+# Find out more about building applications with Shiny here:
+#
+#    http://shiny.rstudio.com/
+#
+
+# Load libraries
+library(leaflet)
+library(data.table)
+library(shiny)
+library(shinythemes)
+library(lubridate)
+
+
+# Load data
+d <- fread("demographics_plus_zip_info.csv")
+d[ , JoinDate:=dmy(JoinDate, tz="UTC")]
+zips <- zips[complete.cases(zips), ] # Do not consider observations with misssing values
+
+
+ui <- fluidPage(theme = shinytheme("simplex"),
+                titlePanel("Customer Map"),
+                sidebarLayout(
+                  sidebarPanel(# Copy the chunk below to make a group of checkboxes
+                    checkboxGroupInput("checkGroup", label = h2("Gender Filter"), 
+                                       choices = list("Female" = "f", 
+                                                      "Male" = "m"),
+                                       selected = c("f", "m"))
+                  ), 
+                  mainPanel(
+                    leafletOutput("mymap", height = "800px")
+                  )
+                )
+)
+
+
+# Define server logic required to draw a histogram
+server <- function(input, output,session) {
+  
+  output$value <- renderPrint({ input$checkGroup })
+  
+
+  
+  output$mymap <- renderLeaflet({
+    zips <- as.matrix(d[ Gender %in% input$CheckGroup, list(zip_longitude, zip_latitude)])
+    map <- leaflet()
+    map <- addTiles(map) 
+    map <- addMarkers(map, 
+                      data = zips, 
+                      clusterOptions = markerClusterOptions())
+    map <- setView(map, lat= 43, lng= -79, zoom = 3)
+  })
+}
+
+# Run the application 
+shinyApp(ui = ui, server = server)
